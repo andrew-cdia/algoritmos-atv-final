@@ -1,121 +1,104 @@
 """
-Variáveis Importantes
+Variáveis importantes
 """
 
-LEN_SPACE = 12
+SPACE = 12
+QTD_DIAS = 5
+QTD_ATIVIDADES = 10
 
-DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"]
+DAYS = {
+        "Segunda" : 0,
+        "Terça" : 1,
+        "Quarta" : 2,
+        "Quinta" : 3,
+        "Sexta" : 4
+    }
 
-semana = []
+def remove(timetable : list, day : int, hour : int, quantity : int) -> list:
+    for n in range(hour, hour + quantity):
+        timetable[day][n] = "Livre"
+    return timetable
 
+def add(timetable : list, day : int, hour : int, quantity : int, nome : str) -> list:
+    for n in range(hour, hour + quantity):
+        timetable[day][n] = nome
+    return timetable
 
-"""
-Procedimento de entrada dos dados
-1. Restrições
-2. Formato
-3. Adequação
-"""
+def find(timetable : list, quantity):
+    for day in range(len(timetable)):
+        for hour in range(len(timetable[day]) - quantity + 1):
+            if test(timetable, day, hour, quantity):
+                return (day, hour)
+    return None
 
-for _ in range(5):
-    dia = input("").split(" ")
-
-    if len(dia) != 10:
-        exit()
-    
-    semana.append(dia)
-
-qtd_comandos = int(input())
-
-comandos = []
-
-for _ in range(qtd_comandos):
-    comando = input("").split(" ")
-
-    if comando[0].lower() == "remover" and len(comando) != 4:
-        print("Comando inválido")
-        exit()
-
-    elif comando[0].lower() == "adicionar" and len(comando) != 3:
-        print("Comando inválido")
-        exit()
-
-    comandos.append(comando)
-
-"""
-Funções utilizadas
-"""
-
-def teste(timetable : list, day : int, inicio : int, fim : int) -> list:
+def test(timetable : list, day : int, hour : int, quantity : int) -> bool:
     try:
-        for activity in timetable[day][inicio : fim]:
-            if activity != "Livre":
+        for hour in timetable[day][hour : hour + quantity]:
+            if hour != "Livre":
                 return False
-        return True
+        return True    
     except IndexError:
         return False
 
-def muda(timetable : list, day : int, inicio: int, fim : int, name="Livre") -> list:
-    i = 0
-    while i < (fim - inicio):
-        timetable[day][inicio + i] = name
-        i += 1
+semana = []
 
-    return timetable
+for _ in range(QTD_DIAS):
+    dias = input().split(" ")
 
-def acha_posicao(timetable : list, qtd : int) -> int|None:
-    for day in range(len(timetable)):
-        for hour in range(len(timetable[day]) - qtd + 1):
-            if teste(timetable, day, hour, hour + qtd):
-                return (day, hour)
-    return None 
+    if len(dias) != 10:
+        exit()
 
-def print_tabela(semana : list) -> None:
-    cab = ["Horário"] + DIAS
-    for n in cab:
-        print(f"{n}{" " * (LEN_SPACE - len(n))}", end='')
-    print()
-    inicial = 8
-    for atv in range(len(semana[0])):
-        horario = f"{inicial}-{inicial+1}"
-        print(f"{horario}{" " * (LEN_SPACE - len(horario))}", end="")
-        for day in range(len(DIAS)):
-            print(f"{semana[day][atv]}{" " * (LEN_SPACE - len(semana[day][atv]))}", end="")
-        inicial += 1
-        print()
+    semana.append(dias)
 
-"""
-Loop Principal
-"""
+comandos = []
+
+for _ in range(int(input(""))):
+    comando = input().split(" ")
+
+    if len(comando) != 3 and len(comando) != 4:
+        exit()
+    
+    comandos.append(comando)
 
 for comando in comandos:
     if comando[0].lower() == "adicionar":
-        qtd = int(comando[2])
-        data = acha_posicao(semana, qtd)
+        nome = comando[1]
+        quantidade = int(comando[2])
 
+        data = find(semana, quantidade)
+    
         if not data:
-            print(f"Não foi possível alocar a atividade {comando[1]}")
+            print(f"Não foi possível alocar a atividade {nome}")
             continue
         
-        dia = data[0]
-        hora = data[1]
-
-        print(dia, hora)
-
-        semana = muda(semana, dia, hora, hora + qtd, name=comando[1])
+        semana = add(semana, data[0], data[1], quantidade, nome)
 
     elif comando[0].lower() == "remover":
-        dia = DIAS.index(comando[1])
-        inicio = int(comando[2]) - 8
-        fim = int(comando[3]) - 8
+        dia = DAYS[comando[1]]
+        hora = int(comando[2]) - 8
+        final = int(comando[3]) - 8
+        quantidade = final - hora
 
-        if teste(semana, dia, inicio, fim):
-            semana = muda(semana, dia, inicio, fim)
+        if quantidade > 0 and hora >= 0 and final <= QTD_ATIVIDADES:
+            semana = remove(semana, dia, hora, quantidade)
+
+        # Verificar Lógica
     
     else:
         continue
 
-"""
-Resultado
-"""
+def print_table(table) -> None:
+    print("Horário".ljust(SPACE), end="")
+    for dia in DAYS.keys():
+        print(f"{dia.ljust(SPACE)}", end='')
+    print()
 
-print_tabela(semana)
+    horario_inicial = 8
+    for atividade in range(QTD_ATIVIDADES):
+        print(f"{horario_inicial} - {horario_inicial + 1}".ljust(SPACE), end="")
+        for dia in range(QTD_DIAS):
+            print(f"{semana[dia][atividade].ljust(SPACE)}", end="")
+        horario_inicial += 1
+        print()
+
+print_table(semana)
