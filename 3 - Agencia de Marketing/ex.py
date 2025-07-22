@@ -4,15 +4,15 @@ Entrada de Dados.
 
 ORCAMENTO = int(input())
 
-INFLUENCIADORES = list()
+INFLUENCIADORES = dict()
 
 for _ in range(int(input())):
-    linha = input().split(", ")
+    linha = input().split(",")
 
     custo = int(linha[0])
     seguidores = set(linha[1:])
 
-    INFLUENCIADORES.append([custo, seguidores])
+    INFLUENCIADORES.update({custo : seguidores})
 
 """
 Métodos.
@@ -24,17 +24,15 @@ def ingenua(influenciadores : list, orcamento : int) -> tuple:
     inf : list = lista de influenciadores, onde inf[0] é o custo e inf[1] conjunto de seguidores.
     orc : int = orçamento total
     """
-    custo = [influenciador[0] for influenciador in influenciadores]
-    custo = dict(enumerate(custo))
-    custo = sorted(custo.items(), key=lambda k: k[1])
+    influenciadores = sorted(influenciadores.items())
 
     gasto, seguidores = 0, set()
 
-    for index, valor in custo:
-        if gasto + valor > orcamento:
+    for custo, seguidor in influenciadores:
+        if gasto + custo > orcamento:
             break
-        gasto += valor
-        seguidores |= influenciadores[index][1]
+        gasto += custo
+        seguidores |= seguidor
 
     return (gasto, len(seguidores))
     
@@ -45,24 +43,56 @@ def atual(influenciadores : list, orcamento : int) -> tuple:
     inf : list = lista de influenciadores, onde inf[0] é o custo e inf[1] conjunto de seguidores.
     orc : int = orçamento total
     """
-    custo_beneficio = [influenciador[0] / len(influenciador[1]) for influenciador in influenciadores]
-    custo_beneficio = dict(enumerate(custo_beneficio))
-    custo_beneficio = sorted(custo_beneficio.items(), key=lambda k: k[1])
+    custo_beneficio = [{
+            'custo' : a,
+            'seguidores' : b,
+            'custo-beneficio' : a / len(b)
+        } for a, b in influenciadores.items()]
+    custo_beneficio = sorted(custo_beneficio, key=lambda k : k['custo-beneficio'])
 
     gasto, seguidores = 0, set()
 
-    for index, _ in custo_beneficio:
-        if gasto + influenciadores[index][0] > orcamento:
-            break
-        gasto += influenciadores[index][0]
-        seguidores |= influenciadores[index][1]       
-    
+    for relacao in custo_beneficio:
+        if gasto + relacao['custo'] > orcamento:
+            continue
+        gasto += relacao['custo']
+        seguidores |= relacao['seguidores']
+
     return (gasto, len(seguidores))
 
+def nova(influenciadores : list, orcamento : int) -> tuple:
+    
+    gasto, seguidores = 0, set()
 
-def nova(inf : list, orc : int) -> tuple:
-    pass
+    residual = [{
+            'custo' : a,
+            'seguidores' : b,
+            'custo-beneficio' : a / len(b)
+        } for a, b in influenciadores.items()]
 
+    while True:
+        for relacao in residual:
+            relacao['seguidores'] -= seguidores
+            if len(relacao['seguidores']) > 0:
+                relacao['custo-beneficio'] = relacao['custo'] / len(relacao['seguidores'])
+            else:
+                relacao['custo-beneficio'] = 0
+        
+        residual = sorted(residual, key=lambda k : k['custo-beneficio'])
+
+        if len(residual) == 0 or gasto + residual[0]['custo'] > orcamento:
+            break
+        
+        if residual[0]['custo-beneficio'] == 0:
+            residual.pop(0)
+            continue
+        
+        gasto += residual[0]['custo']
+        seguidores |= residual[0]['seguidores']
+
+        residual.pop(0)
+    
+    return (gasto, len(seguidores))
 
 """
 Execução principal do programa.
@@ -70,16 +100,10 @@ Execução principal do programa.
 
 if __name__ == "__main__":
     ing = ingenua(INFLUENCIADORES, ORCAMENTO)
-    print(ing)
     print(f"Estratégia Ingênua: {ing[0]}.0, {ing[1]}")
-
     
     at = atual(INFLUENCIADORES, ORCAMENTO)
-    print(at)
     print(f"Estratégia Atual: {at[0]}.0, {at[1]}")
 
-    """
     nv = nova(INFLUENCIADORES, ORCAMENTO)
-    print(nv)
     print(f"Estratégia Nova: {nv[0]}.0, {nv[1]}")
-    """
